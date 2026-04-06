@@ -50,6 +50,9 @@ $config = [
             ],
         ],
         */
+        'http' => [
+            'class' => 'app\components\HttpClient',
+        ],
     ],
     'params' => $params,
 ];
