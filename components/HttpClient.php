@@ -75,7 +75,7 @@ class HttpClient extends Component
             throw new Exception("cURL Error: " . $error);
         }
         
-        return (object) [
+        return [
             'statusCode' => $httpCode,
             'data' => json_decode($response, true),
             'raw' => $response
