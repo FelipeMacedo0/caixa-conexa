@@ -1,11 +1,4 @@
- <?php
-
-/**
- * @link https://www.yiiframework.com/
- * @copyright Copyright (c) 2008 Yii Software LLC
- * @license https://www.yiiframework.com/license/
- */
-
+<?php
 namespace app\commands;
 
 use yii\console\Controller;
@@ -20,7 +13,7 @@ use Dotenv\Dotenv;
  * @author Felipe macedo <felipe.macedo@team.conexa.app>
  * @since 2.0
  */
-class HelloController extends Controller
+class DatabaseController extends Controller
 {
     /**
      * Esse comando testa a conexão da aplicação com o banco de dados
