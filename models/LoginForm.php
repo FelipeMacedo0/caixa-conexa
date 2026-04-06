@@ -4,6 +4,7 @@ namespace app\models;
 
 use Yii;
 use yii\base\Model;
+use app\services\AuthService;
 
 /**
  * LoginForm is the model behind the login form.
@@ -17,8 +18,6 @@ class LoginForm extends Model
     public $password;
     public $rememberMe = true;
 
-    private $_user = false;
-
 
     /**
      * @return array the validation rules.
@@ -30,27 +29,7 @@ class LoginForm extends Model
             [['username', 'password'], 'required'],
             // rememberMe must be a boolean value
             ['rememberMe', 'boolean'],
-            // password is validated by validatePassword()
-            ['password', 'validatePassword'],
         ];
-    }
-
-    /**
-     * Validates the password.
-     * This method serves as the inline validation for password.
-     *
-     * @param string $attribute the attribute currently being validated
-     * @param array $params the additional name-value pairs given in the rule
-     */
-    public function validatePassword($attribute, $params)
-    {
-        if (!$this->hasErrors()) {
-            $user = $this->getUser();
-
-            if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError($attribute, 'Incorrect username or password.');
-            }
-        }
     }
 
     /**
@@ -59,23 +38,31 @@ class LoginForm extends Model
      */
     public function login()
     {
-        if ($this->validate()) {
-            return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
+        $authService = new AuthService();
+
+        $authDTO = $authService->login([
+            'username' => $this->username,
+            'password' => $this->password
+        ]);
+            
+        if ($authDTO->statusCode == 200) {
+            $params = [
+                'id' => $authDTO->user->id,
+                'type' => $authDTO->user->type,
+                'name' => $authDTO->user->name,
+                'authKey' => $authDTO->accessToken,
+                'accessToken' => $authDTO->accessToken
+            ];
+
+            $user = new User($params);
+
+            Yii::$app->session->set('user.id.' . $authDTO->user->id, $params);
+            Yii::$app->session->set('user.accessToken.' . $authDTO->accessToken, $params);
+
+            return Yii::$app->user->login($user,  $authDTO->expiresIn);
         }
+
         return false;
     }
 
-    /**
-     * Finds user by [[username]]
-     *
-     * @return User|null
-     */
-    public function getUser()
-    {
-        if ($this->_user === false) {
-            $this->_user = User::findByUsername($this->username);
-        }
-
-        return $this->_user;
-    }
 }
