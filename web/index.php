@@ -5,8 +5,8 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load(); // Use safeLoad to prevent errors if the file is missing
 
 // comment out the following two lines when deployed to production
-defined('YII_DEBUG') or define('YII_DEBUG', getenv('YII_DEBUG') === 'true');
-defined('YII_ENV') or define('YII_ENV', getenv('YII_ENV') ?: 'prod');
+defined('YII_DEBUG') or define('YII_DEBUG', $_ENV['YII_DEBUG'] === 'true');
+defined('YII_ENV') or define('YII_ENV', $_ENV['YII_ENV'] ?: 'prod');
 
 
 require __DIR__ . '/../vendor/yiisoft/yii2/Yii.php';
