@@ -49,8 +49,12 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?= Html::a('Anterior', ['site/sales', 'limit' => $limit, 'offset' => max(0, $offset - $limit)], ['class' => 'btn btn-outline-primary btn-sm']) ?>
                     <?php endif; ?>
                     
-                    <?php if (isset($sales->pagination) && $sales->pagination->hasNext): ?>
-                        <?= Html::a('Próxima', ['site/sales', 'limit' => $limit, 'offset' => $offset + $limit], ['class' => 'btn btn-outline-primary btn-sm']) ?>
+                    <?php if (isset($sales->pagination)): ?>
+                        <?php if ($sales->pagination->hasNext): ?>
+                            <?= Html::a('Próxima', ['site/sales', 'limit' => $limit, 'offset' => $offset + $limit], ['class' => 'btn btn-outline-primary btn-sm']) ?>
+                        <?php elseif ($offset > 0): ?>
+                            <?= Html::a('Primeira página', ['site/sales', 'limit' => $limit, 'offset' => 0], ['class' => 'btn btn-outline-secondary btn-sm']) ?>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </td>
             </tr>
