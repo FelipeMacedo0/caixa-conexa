@@ -60,13 +60,18 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
     <!-- Sidebar -->
     <aside class="bg-light border-end" style="width: 250px; min-height: calc(100vh - 56px - 60px);">
         <?php
+        $menuItems = [
+            ['label' => 'Home', 'url' => ['/site/index']],
+        ];
+        
+        if (!Yii::$app->user->isGuest) {
+            $menuItems[] = ['label' => 'Products', 'url' => ['/site/products']];
+            $menuItems[] = ['label' => 'Sales', 'url' => ['/site/sales']];
+        }
+
         echo Nav::widget([
             'options' => ['class' => 'nav flex-column nav-pills p-3'],
-            'items' => [
-                ['label' => 'Home', 'url' => ['/site/index']],
-                ['label' => 'Products', 'url' => ['/site/products']],
-                ['label' => 'Sales', 'url' => ['/site/sales']],
-            ]
+            'items' => $menuItems
         ]);
         ?>
     </aside>
