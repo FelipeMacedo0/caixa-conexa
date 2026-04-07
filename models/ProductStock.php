@@ -41,6 +41,14 @@ class ProductStock extends ActiveRecord
         ];
     }
 
+    public static function getStockBalance($productId)
+    {
+        return (int) self::find()
+            ->where(['product_id' => $productId])
+            ->andWhere(['is', 'deleted_at', new \yii\db\Expression('NULL')])
+            ->sum('qtd');
+    }
+
     /**
      * {@inheritdoc}
      */

@@ -170,4 +170,63 @@ class SiteController extends Controller
 
         return $this->redirect(Yii::$app->request->referrer ?: ['site/products']);
     }
+
+    /**
+     * Action to search products for Select2 Ajax
+     */
+    public function actionSearchProducts($q = null)
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $conexaService = new ConexaService();
+        
+        try {
+            $productsDto = $conexaService->products(100, 0);
+            $data = $productsDto->getData();
+            
+            $results = [];
+            foreach ($data as $p) {
+                $pArray = $p->toArray();
+                if (empty($q) || stripos($pArray['name'], $q) !== false) {
+                    $results[] = ['id' => $pArray['productId'], 'text' => $pArray['name']];
+                }
+            }
+            
+            return ['results' => array_values($results)];
+        } catch (\Exception $e) {
+            return ['results' => []];
+        }
+    }
+
+    /**
+     * Action to launch a sale and decrement stock
+     */
+    public function actionLaunchSale()
+    {
+        $request = Yii::$app->request;
+        if ($request->isPost) {
+            $productId = $request->post('product_id');
+            $qtd = (int) $request->post('qtd');
+            $observation = $request->post('observation');
+
+            $balance = \app\models\ProductStock::getStockBalance($productId);
+
+            if ($qtd > $balance) {
+                Yii::$app->session->setFlash('error', "Quantidade solicitada da venda ($qtd) é maior que o saldo em estoque ($balance).");
+            } else {
+                $model = new \app\models\ProductStock();
+                $model->product_id = $productId;
+                $model->qtd = -$qtd;
+                $model->observation = $observation ?: 'Venda lançada';
+                
+                if ($model->save()) {
+                    Yii::$app->session->setFlash('success', 'Venda lançada com sucesso! O estoque foi reduzido.');
+                } else {
+                    $errors = current($model->getFirstErrors());
+                    Yii::$app->session->setFlash('error', 'Erro ao salvar venda: ' . $errors);
+                }
+            }
+        }
+
+        return $this->redirect(Yii::$app->request->referrer ?: ['site/sales']);
+    }
 }
