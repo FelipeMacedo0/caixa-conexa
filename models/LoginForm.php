@@ -47,9 +47,12 @@ class LoginForm extends Model
             
         if ($authDTO->statusCode == 200) {
 
-            $user = new User();
+            $user = User::findOne($authDTO->user->id);
+            if (!$user) {
+                $user = new User();
+                $user->id = $authDTO->user->id;
+            }
 
-            $user->id = $authDTO->user->id;
             $user->type = $authDTO->user->type;
             $user->name = $authDTO->user->name;
             $user->access_token = $authDTO->accessToken;
