@@ -122,7 +122,7 @@ class SiteController extends Controller
 
         return $this->render('products', [
             'model' => $model,
-            'products' => $products->toJson(),
+            'products' => $products->toObject(),
             'limit' => $limit,
             'offset' => $offset,
         ]);

@@ -45,6 +45,11 @@ class PaginationDTO
         return json_encode($this->toArray(), $options);
     }
 
+    public function toObject(): object
+    {
+        return json_decode(json_encode($this->toArray()), false);
+    }
+
     // Getters
     public function getLimit(): ?int { return $this->limit; }
     public function getOffset(): ?int { return $this->offset; }

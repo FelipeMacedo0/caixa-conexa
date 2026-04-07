@@ -124,4 +124,14 @@ class ProductDTO
     {
         return json_encode($this->toArray(), $options);
     }
+
+    /**
+     * Converts DTO to object
+     * 
+     * @return object
+     */
+    public function toObject(): object
+    {
+        return json_decode(json_encode($this->toArray()), false);
+    }
 }
