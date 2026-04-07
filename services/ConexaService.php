@@ -61,8 +61,6 @@ class ConexaService {
             ]);
 
             $data = $response['data'];
-            //var_dump($response);
-            //die;
 
             if(empty($data['pagination'])){
                 throw new Exception('Pagination is empty');
