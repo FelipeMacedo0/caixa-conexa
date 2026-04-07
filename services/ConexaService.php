@@ -5,7 +5,7 @@ use Yii;
 use Exception;
 use app\dtos\AuthDTO;
 
-class AuthService {
+class ConexaService {
     private string $urlApi = "";
 
     public function __construct(){

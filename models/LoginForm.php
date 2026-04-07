@@ -4,7 +4,7 @@ namespace app\models;
 
 use Yii;
 use yii\base\Model;
-use app\services\AuthService;
+use app\services\ConexaService;
 
 /**
  * LoginForm is the model behind the login form.
@@ -38,26 +38,22 @@ class LoginForm extends Model
      */
     public function login()
     {
-        $authService = new AuthService();
+        $ConexaService = new ConexaService();
 
-        $authDTO = $authService->login([
+        $authDTO = $ConexaService->login([
             'username' => $this->username,
             'password' => $this->password
         ]);
             
         if ($authDTO->statusCode == 200) {
-            $params = [
-                'id' => $authDTO->user->id,
-                'type' => $authDTO->user->type,
-                'name' => $authDTO->user->name,
-                'authKey' => $authDTO->accessToken,
-                'accessToken' => $authDTO->accessToken
-            ];
 
-            $user = new User($params);
+            $user = new User();
 
-            Yii::$app->session->set('user.id.' . $authDTO->user->id, $params);
-            Yii::$app->session->set('user.accessToken.' . $authDTO->accessToken, $params);
+            $user->id = $authDTO->user->id;
+            $user->type = $authDTO->user->type;
+            $user->name = $authDTO->user->name;
+            $user->access_token = $authDTO->accessToken;
+            $user->save();
 
             return Yii::$app->user->login($user,  $authDTO->expiresIn);
         }
