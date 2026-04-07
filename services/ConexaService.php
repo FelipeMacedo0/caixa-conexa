@@ -74,4 +74,41 @@ class ConexaService {
             throw new Exception("Erro ao buscar", 1, $e);
         }
     }
+
+    public function sales(int $limit=10, int $offset=0){
+        $token = Yii::$app->user->identity->access_token;
+
+        if(empty($token)){
+            throw new Exception("Usuário não autorizado!");
+        }
+
+        try{
+            $uri = "/sales";
+
+            $query = http_build_query([
+                'limit' => $limit,
+                'offset' => $offset
+            ]);
+
+            $endpoint = $uri . '?' . $query;
+
+            // GET request
+            $response = Yii::$app->http->get($this->urlApi . $endpoint, [
+                "Authorization" => "Bearer " . $token,
+            ]);
+
+            $data = $response['data'];
+
+            if(empty($data['pagination'])){
+                throw new Exception('Pagination is empty');
+            }
+
+            $pagination = PaginationDTO::fromArray($data['pagination']);
+
+            return new \app\dtos\SalesDTO($data['data'], $pagination);
+
+        }catch(Exception $e){
+            throw new Exception("Erro ao buscar", 1, $e);
+        }
+    }
 }

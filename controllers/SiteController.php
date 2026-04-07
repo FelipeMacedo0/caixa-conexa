@@ -135,6 +135,16 @@ class SiteController extends Controller
      */
     public function actionSales()
     {
-        return $this->render('sales');
+        $limit = (int)Yii::$app->request->get('limit', 10);
+        $offset = (int)Yii::$app->request->get('offset', 0);
+
+        $conexaService = new ConexaService();
+        $sales = $conexaService->sales($limit, $offset);
+
+        return $this->render('sales', [
+            'sales' => $sales->toObject(),
+            'limit' => $limit,
+            'offset' => $offset,
+        ]);
     }
 }
