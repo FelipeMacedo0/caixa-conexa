@@ -1,6 +1,8 @@
 <?php
 namespace app\services;
 
+use app\dtos\PaginationDTO;
+use app\dtos\ProductsDTO;
 use Yii;
 use Exception;
 use app\dtos\AuthDTO;
@@ -14,6 +16,13 @@ class ConexaService {
 
     public function login(array $params){
        
+        if(empty($params["username"])){
+            throw new Exception('Username is empty');
+        }
+
+        if(empty($params["password"])){
+            throw new Exception('Password is empty');
+        }
 
         try{
             // GET request
@@ -26,6 +35,45 @@ class ConexaService {
 
         }catch(Exception $e){
             throw new Exception("Erro ao logar usuario", 1, $e);
+        }
+    }
+
+    public function products(int $limit=10, int $offset=0){
+        $token = Yii::$app->user->identity->access_token;
+
+        if(empty($token)){
+            throw new Exception("Usuário não autorizado!");
+        }
+
+        try{
+            $uri = "/products";
+
+            $query = http_build_query([
+                'limit' => $limit,
+                'offset' => $offset
+            ]);
+
+            $endpoint = $uri . '?' . $query;
+
+            // GET request
+            $response = Yii::$app->http->get($this->urlApi . $endpoint, [
+                "Authorization" => "Bearer " . $token,
+            ]);
+
+            $data = $response['data'];
+            //var_dump($response);
+            //die;
+
+            if(empty($data['pagination'])){
+                throw new Exception('Pagination is empty');
+            }
+
+            $pagination = PaginationDTO::fromArray($data['pagination']);
+
+            return new ProductsDTO($data['data'], $pagination);
+
+        }catch(Exception $e){
+            throw new Exception("Erro ao buscar", 1, $e);
         }
     }
 }

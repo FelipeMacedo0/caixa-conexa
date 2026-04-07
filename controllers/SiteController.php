@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\services\ConexaService;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -105,14 +106,25 @@ class SiteController extends Controller
      */
     public function actionProducts()
     {
+        $limit = (int)Yii::$app->request->get('limit', 10);
+        $offset = (int)Yii::$app->request->get('offset', 0);
+
         $model = new ContactForm();
         if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
             Yii::$app->session->setFlash('contactFormSubmitted');
 
             return $this->refresh();
         }
+
+        $conexaService = new ConexaService();
+
+        $products = $conexaService->products($limit, $offset);
+
         return $this->render('products', [
             'model' => $model,
+            'products' => $products->toJson(),
+            'limit' => $limit,
+            'offset' => $offset,
         ]);
     }
 
