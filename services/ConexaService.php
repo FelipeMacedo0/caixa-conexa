@@ -6,6 +6,7 @@ use app\dtos\ProductsDTO;
 use Yii;
 use Exception;
 use app\dtos\AuthDTO;
+use app\dtos\SalesDTO;
 
 class ConexaService {
     private string $urlApi = "";
@@ -105,7 +106,7 @@ class ConexaService {
 
             $pagination = PaginationDTO::fromArray($data['pagination']);
 
-            return new \app\dtos\SalesDTO($data['data'], $pagination);
+            return new SalesDTO($data['data'], $pagination);
 
         }catch(Exception $e){
             throw new Exception("Erro ao buscar", 1, $e);
