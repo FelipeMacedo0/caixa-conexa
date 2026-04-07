@@ -37,11 +37,8 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
         'options' => ['class' => 'navbar-expand-md navbar-dark bg-dark fixed-top']
     ]);
     echo Nav::widget([
-        'options' => ['class' => 'navbar-nav'],
+        'options' => ['class' => 'navbar-nav ms-auto'],
         'items' => [
-            ['label' => 'Home', 'url' => ['/site/index']],
-            ['label' => 'Products', 'url' => ['/site/products']],
-            ['label' => 'Sales', 'url' => ['/site/sales']],
             Yii::$app->user->isGuest
                 ? ['label' => 'Login', 'url' => ['/site/login']]
                 : '<li class="nav-item">'
@@ -58,15 +55,32 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
     ?>
 </header>
 
-<main id="main" class="flex-shrink-0" role="main">
-    <div class="container">
-        <?php if (!empty($this->params['breadcrumbs'])): ?>
-            <?= Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]) ?>
-        <?php endif ?>
-        <?= Alert::widget() ?>
-        <?= $content ?>
-    </div>
-</main>
+<div class="d-flex flex-grow-1" style="padding-top: 56px;">
+    <!-- Sidebar -->
+    <aside class="bg-light border-end" style="width: 250px; min-height: calc(100vh - 56px - 60px);">
+        <?php
+        echo Nav::widget([
+            'options' => ['class' => 'nav flex-column nav-pills p-3'],
+            'items' => [
+                ['label' => 'Home', 'url' => ['/site/index']],
+                ['label' => 'Products', 'url' => ['/site/products']],
+                ['label' => 'Sales', 'url' => ['/site/sales']],
+            ]
+        ]);
+        ?>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main" class="flex-grow-1 p-4" role="main" style="overflow-y: auto;">
+        <div class="container-fluid">
+            <?php if (!empty($this->params['breadcrumbs'])): ?>
+                <?= Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]) ?>
+            <?php endif ?>
+            <?= Alert::widget() ?>
+            <?= $content ?>
+        </div>
+    </main>
+</div>
 
 <footer id="footer" class="mt-auto py-3 bg-light">
     <div class="container">
