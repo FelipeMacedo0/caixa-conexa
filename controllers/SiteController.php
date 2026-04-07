@@ -147,4 +147,27 @@ class SiteController extends Controller
             'offset' => $offset,
         ]);
     }
+
+    /**
+     * Action to add stock via modal
+     */
+    public function actionAddStock()
+    {
+        $request = Yii::$app->request;
+        if ($request->isPost) {
+            $model = new \app\models\ProductStock();
+            $model->product_id = $request->post('product_id');
+            $model->qtd = $request->post('qtd');
+            $model->observation = $request->post('observation');
+
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Estoque lançado com sucesso!');
+            } else {
+                $errors = current($model->getFirstErrors());
+                Yii::$app->session->setFlash('error', 'Erro ao salvar estoque: ' . $errors);
+            }
+        }
+
+        return $this->redirect(Yii::$app->request->referrer ?: ['site/products']);
+    }
 }
