@@ -42,7 +42,7 @@ class ConexaService {
         }
     }
 
-    public function products(int $limit=10, int $offset=0){
+    public function products(int $limit=10, int $offset=0, ?string $name = null){
         $token = Yii::$app->user->identity->access_token;
 
         if(empty($token)){
@@ -52,10 +52,16 @@ class ConexaService {
         try{
             $uri = "/products";
 
-            $query = http_build_query([
+            $params = [
                 'limit' => $limit,
                 'offset' => $offset
-            ]);
+            ];
+            
+            if ($name !== null && trim($name) !== '') {
+                $params['name'] = $name;
+            }
+
+            $query = http_build_query($params);
 
             $endpoint = $uri . '?' . $query;
 
@@ -79,7 +85,7 @@ class ConexaService {
         }
     }
 
-    public function customers(int $limit=10, int $offset=0){
+    public function customers(int $limit=10, int $offset=0, ?string $name = null){
         $token = Yii::$app->user->identity->access_token;
 
         if(empty($token)){
@@ -89,10 +95,16 @@ class ConexaService {
         try{
             $uri = "/customers";
 
-            $query = http_build_query([
+            $params = [
                 'limit' => $limit,
                 'offset' => $offset
-            ]);
+            ];
+
+            if ($name !== null && trim($name) !== '') {
+                $params['name'] = $name;
+            }
+
+            $query = http_build_query($params);
 
             $endpoint = $uri . '?' . $query;
 

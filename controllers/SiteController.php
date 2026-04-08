@@ -183,18 +183,18 @@ class SiteController extends Controller
         $conexaService = new ConexaService();
         
         try {
-            $productsDto = $conexaService->products(100, 0);
+            $productsDto = $conexaService->products(100, 0, $q);
             $data = $productsDto->getData();
             
-            $results = [];
-            foreach ($data as $p) {
+            $results = array_map(function($p) {
                 $pArray = $p->toArray();
-                if (empty($q) || stripos($pArray['name'], $q) !== false) {
-                    $results[] = ['id' => $pArray['productId'], 'text' => $pArray['name']];
-                }
-            }
+                return [
+                    'id' => $pArray['productId'], 
+                    'text' => $pArray['name']
+                ];
+            }, $data);
             
-            return ['results' => array_values($results)];
+            return ['results' => $results];
         } catch (\Exception $e) {
             return ['results' => []];
         }
@@ -209,25 +209,26 @@ class SiteController extends Controller
         $conexaService = new ConexaService();
         
         try {
-            $customersDto = $conexaService->customers(100, 0);
+            $customersDto = $conexaService->customers(100, 0, $q);
             $data = $customersDto->getData();
-
-            $results = [];
-            foreach ($data as $c) {
+            
+            $results = array_map(function($c) {
                 $cArray = $c->toArray();
                 $name = $cArray['name'] ?? '';
                 $tradeName = $cArray['tradeName'] ?? '';
                 
-                if (empty($q) || stripos($name, $q) !== false || stripos($tradeName, $q) !== false) {
-                    $text = $name;
-                    if ($tradeName && $tradeName !== $name) {
-                        $text .= ' (' . $tradeName . ')';
-                    }
-                    $results[] = ['id' => $cArray['customerId'], 'text' => $text];
+                $text = $name;
+                if ($tradeName && $tradeName !== $name) {
+                    $text .= ' (' . $tradeName . ')';
                 }
-            }
+                
+                return [
+                    'id' => $cArray['customerId'], 
+                    'text' => $text
+                ];
+            }, $data);
             
-            return ['results' => array_values($results)];
+            return ['results' => $results];
         } catch (\Exception $e) {
             return ['results' => []];
         }
