@@ -30,14 +30,28 @@ $this->params['breadcrumbs'][] = $this->title;
             <tr>
                 <th>ID</th>
                 <th>Name</th>
+                <th>Estoque</th>
                 <th class="text-center" style="width: 150px;">Ações</th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($products->data as $product): ?>
+                <?php
+                $stock = (int)\app\models\ProductStock::getStockBalance($product->productId);
+                if ($stock <= 0) {
+                    $stockStyle = 'color: red; font-weight: bold;';
+                } elseif ($stock < 10) {
+                    $stockStyle = 'color: orange; font-weight: bold;';
+                } elseif ($stock < 50) {
+                    $stockStyle = 'color: #d39e00; font-weight: bold;'; // Amarelo escuro para melhor leitura
+                } else {
+                    $stockStyle = 'color: green; font-weight: bold;';
+                }
+                ?>
                 <tr>
                     <td class="align-middle"><?= Html::encode($product->productId) ?></td>
                     <td class="align-middle"><?= Html::encode($product->name) ?></td>
+                    <td class="align-middle" style="<?= $stockStyle ?>"><?= Html::encode($stock) ?></td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#stockModal" data-product-id="<?= Html::encode($product->productId) ?>">
                             Lançar Estoque
@@ -48,7 +62,7 @@ $this->params['breadcrumbs'][] = $this->title;
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="3" class="text-center">
+                <td colspan="4" class="text-center">
                     <?php if ($offset > 0): ?>
                         <?= Html::a('Anterior', ['site/products', 'limit' => $limit, 'offset' => max(0, $offset - $limit)], ['class' => 'btn btn-outline-primary btn-sm']) ?>
                     <?php endif; ?>
