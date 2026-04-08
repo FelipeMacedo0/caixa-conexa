@@ -2,14 +2,17 @@
 
 namespace app\controllers;
 
-use app\services\ConexaService;
+
 use Yii;
-use yii\filters\AccessControl;
-use yii\web\Controller;
 use yii\web\Response;
+use yii\web\Controller;
 use yii\filters\VerbFilter;
+use yii\filters\AccessControl;
+use app\dtos\SaleDTO;
 use app\models\LoginForm;
 use app\models\ContactForm;
+use app\models\ProductStock;
+use app\services\ConexaService;
 
 class SiteController extends Controller
 {
@@ -21,10 +24,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'launch-sale'],
+                'only' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale'],
                 'rules' => [
                     [
-                        'actions' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'launch-sale'],
+                        'actions' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -155,7 +158,7 @@ class SiteController extends Controller
     {
         $request = Yii::$app->request;
         if ($request->isPost) {
-            $model = new \app\models\ProductStock();
+            $model = new ProductStock();
             $model->product_id = $request->post('product_id');
             $model->qtd = $request->post('qtd');
             $model->observation = $request->post('observation');
@@ -198,33 +201,88 @@ class SiteController extends Controller
     }
 
     /**
-     * Action to launch a sale and decrement stock
+     * Action to search customers for Select2 Ajax
      */
-    public function actionLaunchSale()
+    public function actionSearchCustomers($q = null)
     {
-        $request = Yii::$app->request;
-        if ($request->isPost) {
-            $productId = $request->post('product_id');
-            $qtd = (int) $request->post('qtd');
-            $observation = $request->post('observation');
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $conexaService = new ConexaService();
+        
+        try {
+            $customersDto = $conexaService->customers(100, 0);
+            $data = $customersDto->getData();
 
-            $balance = \app\models\ProductStock::getStockBalance($productId);
-
-            if ($qtd > $balance) {
-                Yii::$app->session->setFlash('error', "Quantidade solicitada da venda ($qtd) é maior que o saldo em estoque ($balance).");
-            } else {
-                $model = new \app\models\ProductStock();
-                $model->product_id = $productId;
-                $model->qtd = -$qtd;
-                $model->observation = $observation ?: 'Venda lançada';
+            $results = [];
+            foreach ($data as $c) {
+                $cArray = $c->toArray();
+                $name = $cArray['name'] ?? '';
+                $tradeName = $cArray['tradeName'] ?? '';
                 
-                if ($model->save()) {
-                    Yii::$app->session->setFlash('success', 'Venda lançada com sucesso! O estoque foi reduzido.');
-                } else {
-                    $errors = current($model->getFirstErrors());
-                    Yii::$app->session->setFlash('error', 'Erro ao salvar venda: ' . $errors);
+                if (empty($q) || stripos($name, $q) !== false || stripos($tradeName, $q) !== false) {
+                    $text = $name;
+                    if ($tradeName && $tradeName !== $name) {
+                        $text .= ' (' . $tradeName . ')';
+                    }
+                    $results[] = ['id' => $cArray['customerId'], 'text' => $text];
                 }
             }
+            
+            return ['results' => array_values($results)];
+        } catch (\Exception $e) {
+            return ['results' => []];
+        }
+    }
+
+    /**
+     * Action to store a sale and decrement stock
+     */
+    public function actionStoreSale()
+    {
+        $request = Yii::$app->request;
+        if (!$request->isPost) {
+            return $this->redirect(Yii::$app->request->referrer ?: ['site/sales']);  
+        }
+
+        $productId = $request->post('product_id');
+        $customerId = $request->post('customer_id');
+        $qtd = (int) $request->post('qtd');
+        $observation = $request->post('observation');
+
+        $stockBalance = ProductStock::getStockBalance($productId);
+
+        if ($qtd > $stockBalance) {
+            Yii::$app->session->setFlash('error', "Quantidade solicitada da venda ($qtd) é maior que o saldo em estoque ($stockBalance).");
+            return $this->redirect(Yii::$app->request->referrer ?: ['site/sales']);
+        }
+
+        try {
+            $conexaService = new ConexaService();
+            
+            $saleDto = new SaleDTO([
+                'productId' => $productId,
+                'customerId' => $customerId,
+                'quantity' => $qtd,
+                'notes' => $observation ?: 'Venda lançada via Painel'
+            ]);
+            
+            // Dispara requisição para a API Conexa
+            $postResponse = $conexaService->storeSale($saleDto);
+
+            // Salva na base de dados de estoque local com o ID da venda retornada pela API
+            $model = new ProductStock();
+            $model->product_id = $productId;
+            $model->qtd = -$qtd;
+            $model->observation = $observation ?: 'Venda lançada';
+            $model->sale_id = $postResponse->id;
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Venda lançada com sucesso! O estoque foi reduzido.');
+            } else {
+                $errors = current($model->getFirstErrors());
+                Yii::$app->session->setFlash('error', 'Erro ao salvar venda localmente: ' . $errors);
+            }
+        } catch (\Exception $e) {
+            Yii::$app->session->setFlash('error', 'Erro na API ao salvar venda: ' . $e->getMessage());
         }
 
         return $this->redirect(Yii::$app->request->referrer ?: ['site/sales']);

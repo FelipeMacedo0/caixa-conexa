@@ -5,55 +5,55 @@ namespace app\dtos;
 class SaleDTO
 {
     /** @var string|null */
-    private $status;
+    public $status;
     
     /** @var float|null */
-    private $discountValue;
+    public $discountValue;
     
     /** @var \DateTimeImmutable|null */
-    private $createdAt;
+    public $createdAt;
     
     /** @var \DateTimeImmutable|null */
-    private $updatedAt;
+    public $updatedAt;
     
     /** @var ProductDTO|null */
-    private $product;
+    public $product;
     
     /** @var int|null */
-    private $contractId;
+    public $contractId;
     
     /** @var int|null */
-    private $recurringSaleId;
+    public $recurringSaleId;
     
     /** @var int|null */
-    private $saleId;
+    public $saleId;
     
     /** @var float|null */
-    private $amount;
+    public $amount;
     
     /** @var int|null */
-    private $sellerId;
+    public $sellerId;
     
     /** @var float|null */
-    private $quantity;
+    public $quantity;
     
     /** @var int|null */
-    private $productId;
+    public $productId;
     
     /** @var int|null */
-    private $customerId;
+    public $customerId;
     
     /** @var int|null */
-    private $requesterId;
+    public $requesterId;
     
     /** @var \DateTimeImmutable|null */
-    private $referenceDate;
+    public $referenceDate;
     
     /** @var float|null */
-    private $originalAmount;
+    public $originalAmount;
     
     /** @var string|null */
-    private $notes;
+    public $notes;
 
     /**
      * Constructor

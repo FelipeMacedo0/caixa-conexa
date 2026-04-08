@@ -76,11 +76,17 @@ $this->params['breadcrumbs'][] = $this->title;
         <h5 class="modal-title" id="saleModalLabel">Lançar Venda</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <?= Html::beginForm(['site/launch-sale'], 'post') ?>
+      <?= Html::beginForm(['site/store-sale'], 'post') ?>
       <div class="modal-body">
           <div class="mb-3">
               <label for="modal_product_id" class="form-label">Produto</label>
               <select name="product_id" id="modal_product_id" class="form-select" required="required" style="width: 100%;">
+                 <!-- select2 ajax options will be loaded here -->
+              </select>
+          </div>
+          <div class="mb-3">
+              <label for="modal_customer_id" class="form-label">Cliente</label>
+              <select name="customer_id" id="modal_customer_id" class="form-select" required="required" style="width: 100%;">
                  <!-- select2 ajax options will be loaded here -->
               </select>
           </div>
@@ -106,14 +112,15 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->registerCssFile('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css');
 $this->registerJsFile('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', ['depends' => [\yii\web\JqueryAsset::class]]);
 
-$urlSearch = \yii\helpers\Url::to(['site/search-products']);
+$urlSearchProducts = \yii\helpers\Url::to(['site/search-products']);
+$urlSearchCustomers = \yii\helpers\Url::to(['site/search-customers']);
 $js = <<<JS
 $(document).ready(function() {
     $('#modal_product_id').select2({
         dropdownParent: $('#saleModal'),
         theme: 'default',
         ajax: {
-            url: '{$urlSearch}',
+            url: '{$urlSearchProducts}',
             dataType: 'json',
             delay: 250,
             data: function (params) {
@@ -129,6 +136,29 @@ $(document).ready(function() {
             cache: true
         },
         placeholder: 'Selecione um produto...',
+        allowClear: true
+    });
+
+    $('#modal_customer_id').select2({
+        dropdownParent: $('#saleModal'),
+        theme: 'default',
+        ajax: {
+            url: '{$urlSearchCustomers}',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.results
+                };
+            },
+            cache: true
+        },
+        placeholder: 'Selecione um cliente...',
         allowClear: true
     });
 });
