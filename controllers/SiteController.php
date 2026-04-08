@@ -179,7 +179,7 @@ class SiteController extends Controller
      */
     public function actionSearchProducts($q = null)
     {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Response::FORMAT_JSON;
         $conexaService = new ConexaService();
         
         try {
@@ -205,7 +205,7 @@ class SiteController extends Controller
      */
     public function actionSearchCustomers($q = null)
     {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Response::FORMAT_JSON;
         $conexaService = new ConexaService();
         
         try {
