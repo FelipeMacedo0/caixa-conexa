@@ -4,42 +4,42 @@ namespace app\dtos;
 
 class ProductDTO
 {    /** @var int|null */
-    private $productId;
+    public $productId;
     
     /** @var string|null */
-    private $name;
+    public $name;
     
     /** @var string|null */
-    private $description;
+    public $description;
     
     /** @var float|null */
-    private $price;
+    public $price;
     
     /** @var bool|null */
-    private $active;
+    public $active;
     
     /** @var bool|null */
-    private $isCustomerConsumable;
+    public $isCustomerConsumable;
     
     /** @var \DateTimeImmutable|null */
-    private $createdAt;
+    public $createdAt;
     
     /** @var \DateTimeImmutable|null */
-    private $updatedAt;
+    public $updatedAt;
         /** @var int|null */
-    private $categoryId;
+    public $categoryId;
     
     /** @var int|null */
-    private $companyId;
+    public $companyId;
     
     /** @var int|null */
-    private $costCenterId;
+    public $costCenterId;
     
     /** @var array */
-    private $notificationsEmails;
+    public $notificationsEmails;
     
     /** @var string|null */
-    private $nfseDescription;
+    public $nfseDescription;
 
     /**
      * Constructor

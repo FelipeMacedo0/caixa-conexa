@@ -12,17 +12,25 @@ $this->title = 'Products';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="site-contact">
-    <div class="mb-3">
-        <?= Html::beginForm(['site/products'], 'get', ['class' => 'd-inline-flex align-items-center']) ?>
-            <label for="limit" class="me-2">Exibir:</label>
-            <?= Html::dropDownList('limit', $limit, [5 => 5, 10 => 10, 20 => 20, 50 => 50], [
-                'id' => 'limit', 
-                'onchange' => 'this.form.submit()', 
-                'class' => 'form-select form-select-sm w-auto me-2'
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <div>
+            <?= Html::beginForm(['site/products'], 'get', ['class' => 'd-inline-flex align-items-center']) ?>
+                <label for="limit" class="me-2">Exibir:</label>
+                <?= Html::dropDownList('limit', $limit, [5 => 5, 10 => 10, 20 => 20, 50 => 50], [
+                    'id' => 'limit', 
+                    'onchange' => 'this.form.submit()', 
+                    'class' => 'form-select form-select-sm w-auto me-2'
+                ]) ?>
+                <span>itens</span>
+                <?= Html::hiddenInput('offset', 0) ?>
+            <?= Html::endForm() ?>
+        </div>
+        <div>
+            <?= Html::button('<i class="fas fa-sync"></i> Sincronizar Produtos', [
+                'id' => 'btn-import-products',
+                'class' => 'btn btn-primary',
             ]) ?>
-            <span>itens</span>
-            <?= Html::hiddenInput('offset', 0) ?>
-        <?= Html::endForm() ?>
+        </div>
     </div>
     
     <table class="table table-striped table-bordered">
@@ -110,7 +118,45 @@ $this->params['breadcrumbs'][] = $this->title;
 </div>
 
 <?php
+$urlImportProducts = \yii\helpers\Url::to(['site/import-products']);
+
 $js = <<<JS
+var btnImport = document.getElementById('btn-import-products');
+if (btnImport) {
+    btnImport.addEventListener('click', function() {
+        if (!confirm('Deseja iniciar a sincronização de produtos com a API Conexa?')) {
+            return;
+        }
+
+        var btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sincronizando...';
+
+        // Disparamos o AJAX e não esperamos o processamento terminar para liberar o usuário (ou mostramos que iniciou)
+        fetch("{$urlImportProducts}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('A sincronização foi iniciada com sucesso e está rodando em segundo plano.');
+                } else {
+                    alert('Erro ao iniciar sincronização: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Mesmo com erro de timeout ou algo assim, avisamos que pode estar rodando
+                alert('A requisição foi enviada. Verifique o status posteriormente.');
+            })
+            .finally(() => {
+                // Reabilitamos o botão após um tempo ou após o retorno inicial
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync"></i> Sincronizar Produtos';
+                }, 3000);
+            });
+    });
+}
+
 var stockModal = document.getElementById('stockModal')
 if (stockModal) {
     stockModal.addEventListener('show.bs.modal', function (event) {

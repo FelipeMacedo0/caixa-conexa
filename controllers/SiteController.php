@@ -13,6 +13,7 @@ use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\ProductStock;
 use app\services\ConexaService;
+use app\services\ImportService;
 use app\dtos\ErrorResponseDTO;
 use app\dtos\AuthDTO;
 
@@ -26,10 +27,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale'],
+                'only' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products'],
                 'rules' => [
                     [
-                        'actions' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale'],
+                        'actions' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -301,5 +302,41 @@ class SiteController extends Controller
         }
 
         return $this->redirect(Yii::$app->request->referrer ?: ['site/sales']);
+    }
+
+    /**
+     * Action to import products from Conexa API asynchronously (triggered via AJAX)
+     */
+    public function actionImportProducts()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        // Note: For long-running processes in PHP without a queue, 
+        // we can try to let it run after closing the connection.
+        if (function_exists('fastcgi_finish_request')) {
+            echo json_encode(['success' => true, 'message' => 'Importação iniciada em segundo plano.']);
+            fastcgi_finish_request();
+        }
+
+        try {
+            $importService = new ImportService();
+            $result = $importService->importProducts();
+            
+            if (!$result['success']) {
+                Yii::error("Import error: " . $result['error']);
+                if (!function_exists('fastcgi_finish_request')) {
+                    return ['success' => false, 'message' => $result['error']];
+                }
+            }
+
+            if (!function_exists('fastcgi_finish_request')) {
+                return ['success' => true, 'data' => $result];
+            }
+        } catch (\Exception $e) {
+            Yii::error("ActionImportProducts Exception: " . $e->getMessage());
+            if (!function_exists('fastcgi_finish_request')) {
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
+        }
     }
 }
