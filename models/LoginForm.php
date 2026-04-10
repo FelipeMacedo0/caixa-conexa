@@ -5,6 +5,8 @@ namespace app\models;
 use Yii;
 use yii\base\Model;
 use app\services\ConexaService;
+use app\dtos\AuthDTO;
+use app\dtos\ErrorResponseDTO;
 
 /**
  * LoginForm is the model behind the login form.
@@ -45,7 +47,7 @@ class LoginForm extends Model
             'password' => $this->password
         ]);
             
-        if ($authDTO->statusCode == 200) {
+        if ($authDTO instanceof AuthDTO && $authDTO->statusCode == 200) {
 
             $user = User::findOne($authDTO->user->id);
             if (!$user) {

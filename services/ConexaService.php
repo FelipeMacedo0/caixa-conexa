@@ -10,6 +10,7 @@ use app\dtos\ProductsDTO;
 use app\dtos\CustomersDTO;
 use app\dtos\PaginationDTO;
 use app\dtos\PostResponseDTO;
+use app\dtos\ErrorResponseDTO;
 
 class ConexaService {
     private string $urlApi = "";
@@ -29,11 +30,16 @@ class ConexaService {
         }
 
         try{
-            // GET request
             $response = Yii::$app->http->post($this->urlApi . "/auth", [
                 "username" => $params["username"],
                 "password" => $params["password"]
             ]);
+
+            if (!in_array($response['statusCode'], [200, 201])) {
+                $errorDto = ErrorResponseDTO::fromArray($response['data'], $response['statusCode']);
+                $errorDto->flash();
+                return $errorDto;
+            }
 
             return AuthDTO::fromArray(array_merge($response['data'], ['statusCode' => $response['statusCode']]));
 
@@ -54,7 +60,8 @@ class ConexaService {
 
             $params = [
                 'limit' => $limit,
-                'offset' => $offset
+                'offset' => $offset,
+                'isCustomerConsumable' => 1
             ];
             
             if ($name !== null && trim($name) !== '') {
@@ -65,10 +72,15 @@ class ConexaService {
 
             $endpoint = $uri . '?' . $query;
 
-            // GET request
             $response = Yii::$app->http->get($this->urlApi . $endpoint, [
                 "Authorization" => "Bearer " . $token,
             ]);
+
+            if (!in_array($response['statusCode'], [200, 201])) {
+                $errorDto = ErrorResponseDTO::fromArray($response['data'], $response['statusCode']);
+                $errorDto->flash();
+                return $errorDto;
+            }
 
             $data = $response['data'];
 
@@ -108,10 +120,15 @@ class ConexaService {
 
             $endpoint = $uri . '?' . $query;
 
-            // GET request
             $response = Yii::$app->http->get($this->urlApi . $endpoint, [
                 "Authorization" => "Bearer " . $token,
             ]);
+
+            if (!in_array($response['statusCode'], [200, 201])) {
+                $errorDto = ErrorResponseDTO::fromArray($response['data'], $response['statusCode']);
+                $errorDto->flash();
+                return $errorDto;
+            }
 
             $data = $response['data'];
 
@@ -145,10 +162,15 @@ class ConexaService {
 
             $endpoint = $uri . '?' . $query;
 
-            // GET request
             $response = Yii::$app->http->get($this->urlApi . $endpoint, [
                 "Authorization" => "Bearer " . $token,
             ]);
+
+            if (!in_array($response['statusCode'], [200, 201])) {
+                $errorDto = ErrorResponseDTO::fromArray($response['data'], $response['statusCode']);
+                $errorDto->flash();
+                return $errorDto;
+            }
 
             $data = $response['data'];
 
@@ -175,7 +197,6 @@ class ConexaService {
         try{
             $uri = "/sale";
 
-            // POST request
             $response = Yii::$app->http->post($this->urlApi . $uri, [
                     "productId" => $sale->productId,
                     "quantity" => $sale->quantity,
@@ -184,6 +205,12 @@ class ConexaService {
                 ],[
                 "Authorization" => "Bearer " . $token,
             ]);
+
+            if (!in_array($response['statusCode'], [200, 201])) {
+                $errorDto = ErrorResponseDTO::fromArray($response['data'], $response['statusCode']);
+                $errorDto->flash();
+                return $errorDto;
+            }
 
             return PostResponseDTO::fromArray($response['data']);
 

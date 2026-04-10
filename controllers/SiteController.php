@@ -13,6 +13,8 @@ use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\ProductStock;
 use app\services\ConexaService;
+use app\dtos\ErrorResponseDTO;
+use app\dtos\AuthDTO;
 
 class SiteController extends Controller
 {
@@ -122,10 +124,14 @@ class SiteController extends Controller
         $conexaService = new ConexaService();
 
         $products = $conexaService->products($limit, $offset);
+        
+        $productsObj = ($products instanceof ErrorResponseDTO) 
+            ? (object)['data' => [], 'pagination' => null] 
+            : $products->toObject();
 
         return $this->render('products', [
             'model' => $model,
-            'products' => $products->toObject(),
+            'products' => $productsObj,
             'limit' => $limit,
             'offset' => $offset,
         ]);
@@ -144,8 +150,12 @@ class SiteController extends Controller
         $conexaService = new ConexaService();
         $sales = $conexaService->sales($limit, $offset);
 
+        $salesObj = ($sales instanceof ErrorResponseDTO) 
+            ? (object)['data' => [], 'pagination' => null] 
+            : $sales->toObject();
+
         return $this->render('sales', [
-            'sales' => $sales->toObject(),
+            'sales' => $salesObj,
             'limit' => $limit,
             'offset' => $offset,
         ]);
@@ -268,6 +278,10 @@ class SiteController extends Controller
             
             // Dispara requisição para a API Conexa
             $postResponse = $conexaService->storeSale($saleDto);
+
+            if ($postResponse instanceof ErrorResponseDTO) {
+                return $this->redirect(Yii::$app->request->referrer ?: ['site/sales']);
+            }
 
             // Salva na base de dados de estoque local com o ID da venda retornada pela API
             $model = new ProductStock();
