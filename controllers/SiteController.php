@@ -120,13 +120,6 @@ class SiteController extends Controller
         $limit = (int)Yii::$app->request->get('limit', 10);
         $offset = (int)Yii::$app->request->get('offset', 0);
 
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
-
-            return $this->refresh();
-        }
-
         $query = Product::find();
         $totalCount = $query->count();
         $models = $query->offset($offset)->limit($limit)->all();
@@ -158,7 +151,6 @@ class SiteController extends Controller
         $productsObj = $productsDtoObj->toObject();
 
         return $this->render('products', [
-            'model' => $model,
             'products' => $productsObj,
             'limit' => $limit,
             'offset' => $offset,
