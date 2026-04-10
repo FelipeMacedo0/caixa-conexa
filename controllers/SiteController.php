@@ -12,10 +12,15 @@ use app\dtos\SaleDTO;
 use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\ProductStock;
+use app\models\Product;
+use app\models\Customer;
 use app\services\ConexaService;
 use app\services\ImportService;
 use app\dtos\ErrorResponseDTO;
 use app\dtos\AuthDTO;
+use app\dtos\ProductDTO;
+use app\dtos\ProductsDTO;
+use app\dtos\PaginationDTO;
 
 class SiteController extends Controller
 {
@@ -122,13 +127,35 @@ class SiteController extends Controller
             return $this->refresh();
         }
 
-        $conexaService = new ConexaService();
-
-        $products = $conexaService->products($limit, $offset);
+        $query = Product::find();
+        $totalCount = $query->count();
+        $models = $query->offset($offset)->limit($limit)->all();
         
-        $productsObj = ($products instanceof ErrorResponseDTO) 
-            ? (object)['data' => [], 'pagination' => null] 
-            : $products->toObject();
+        $data = [];
+        foreach ($models as $model) {
+            $data[] = new ProductDTO([
+                'productId' => $model->product_id,
+                'name' => $model->name,
+                'description' => $model->description,
+                'price' => $model->price,
+                'active' => (bool)$model->active,
+                'isCustomerConsumable' => (bool)$model->is_customer_consumable,
+                'categoryId' => $model->category_id,
+                'companyId' => $model->company_id,
+                'costCenterId' => $model->cost_center_id,
+                'nfseDescription' => $model->nfse_description,
+            ]);
+        }
+        
+        $hasNext = ($offset + $limit) < $totalCount;
+        $pagination = new PaginationDTO([
+            'limit' => $limit,
+            'offset' => $offset,
+            'hasNext' => $hasNext
+        ]);
+        
+        $productsDtoObj = new ProductsDTO($data, $pagination);
+        $productsObj = $productsDtoObj->toObject();
 
         return $this->render('products', [
             'model' => $model,
@@ -191,19 +218,20 @@ class SiteController extends Controller
     public function actionSearchProducts($q = null)
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
-        $conexaService = new ConexaService();
         
         try {
-            $productsDto = $conexaService->products(100, 0, $q);
-            $data = $productsDto->getData();
+            $query = Product::find();
+            if ($q) {
+                $query->andWhere(['like', 'name', $q]);
+            }
+            $models = $query->limit(100)->all();
             
             $results = array_map(function($p) {
-                $pArray = $p->toArray();
                 return [
-                    'id' => $pArray['productId'], 
-                    'text' => $pArray['name']
+                    'id' => $p->product_id, 
+                    'text' => $p->name
                 ];
-            }, $data);
+            }, $models);
             
             return ['results' => $results];
         } catch (\Exception $e) {
@@ -217,16 +245,17 @@ class SiteController extends Controller
     public function actionSearchCustomers($q = null)
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
-        $conexaService = new ConexaService();
         
         try {
-            $customersDto = $conexaService->customers(100, 0, $q);
-            $data = $customersDto->getData();
+            $query = Customer::find();
+            if ($q) {
+                $query->andWhere(['or', ['like', 'name', $q], ['like', 'trade_name', $q]]);
+            }
+            $models = $query->limit(100)->all();
             
             $results = array_map(function($c) {
-                $cArray = $c->toArray();
-                $name = $cArray['name'] ?? '';
-                $tradeName = $cArray['tradeName'] ?? '';
+                $name = $c->name ?? '';
+                $tradeName = $c->trade_name ?? '';
                 
                 $text = $name;
                 if ($tradeName && $tradeName !== $name) {
@@ -234,10 +263,10 @@ class SiteController extends Controller
                 }
                 
                 return [
-                    'id' => $cArray['customerId'], 
+                    'id' => $c->customer_id, 
                     'text' => $text
                 ];
-            }, $data);
+            }, $models);
             
             return ['results' => $results];
         } catch (\Exception $e) {
