@@ -21,10 +21,15 @@ $this->params['breadcrumbs'][] = $this->title;
             <?= Html::hiddenInput('offset', 0) ?>
         <?= Html::endForm() ?>
         </div>
-        
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#saleModal">
-            Lançar Venda
-        </button>
+        <div>
+            <?= Html::button('<i class="fas fa-sync"></i> Sincronizar Clientes', [
+                'id' => 'btn-import-customers',
+                'class' => 'btn btn-primary me-2',
+            ]) ?>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#saleModal">
+                Lançar Venda
+            </button>
+        </div>
     </div>
     
     <table class="table table-striped table-bordered">
@@ -114,7 +119,42 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/s
 
 $urlSearchProducts = \yii\helpers\Url::to(['site/search-products']);
 $urlSearchCustomers = \yii\helpers\Url::to(['site/search-customers']);
+$urlImportCustomers = \yii\helpers\Url::to(['site/import-customers']);
+
 $js = <<<JS
+var btnImport = document.getElementById('btn-import-customers');
+if (btnImport) {
+    btnImport.addEventListener('click', function() {
+        if (!confirm('Deseja iniciar a sincronização de clientes com a API Conexa?')) {
+            return;
+        }
+
+        var btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sincronizando...';
+
+        fetch("{$urlImportCustomers}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('A sincronização de clientes foi iniciada com sucesso e está rodando em segundo plano.');
+                } else {
+                    alert('Erro ao iniciar sincronização: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('A requisição foi enviada. Verifique o status posteriormente.');
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync"></i> Sincronizar Clientes';
+                }, 3000);
+            });
+    });
+}
+
 $(document).ready(function() {
     $('#modal_product_id').select2({
         dropdownParent: $('#saleModal'),

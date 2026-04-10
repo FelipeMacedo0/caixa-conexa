@@ -27,10 +27,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products'],
+                'only' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products', 'import-customers'],
                 'rules' => [
                     [
-                        'actions' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products'],
+                        'actions' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products', 'import-customers'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -334,6 +334,40 @@ class SiteController extends Controller
             }
         } catch (\Exception $e) {
             Yii::error("ActionImportProducts Exception: " . $e->getMessage());
+            if (!function_exists('fastcgi_finish_request')) {
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
+        }
+    }
+
+    /**
+     * Action to import customers from Conexa API asynchronously (triggered via AJAX)
+     */
+    public function actionImportCustomers()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        if (function_exists('fastcgi_finish_request')) {
+            echo json_encode(['success' => true, 'message' => 'Importação de clientes iniciada em segundo plano.']);
+            fastcgi_finish_request();
+        }
+
+        try {
+            $importService = new ImportService();
+            $result = $importService->importCustomers();
+            
+            if (!$result['success']) {
+                Yii::error("Import customers error: " . $result['error']);
+                if (!function_exists('fastcgi_finish_request')) {
+                    return ['success' => false, 'message' => $result['error']];
+                }
+            }
+
+            if (!function_exists('fastcgi_finish_request')) {
+                return ['success' => true, 'data' => $result];
+            }
+        } catch (\Exception $e) {
+            Yii::error("ActionImportCustomers Exception: " . $e->getMessage());
             if (!function_exists('fastcgi_finish_request')) {
                 return ['success' => false, 'message' => $e->getMessage()];
             }
