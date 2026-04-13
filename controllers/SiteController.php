@@ -316,6 +316,10 @@ class SiteController extends Controller
     public function actionSearchPersons($q = null, $customer_id = null)
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
+
+        if(empty($customer_id)){
+            return ['results' => []];
+        }
         
         try {
             $query = Person::find();
