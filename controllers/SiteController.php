@@ -4,20 +4,22 @@ namespace app\controllers;
 
 
 use Yii;
-use yii\web\Response;
-use yii\web\Controller;
+use yii\db\Expression;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use app\dtos\SaleDTO;
+use yii\web\Response;
+use yii\web\Controller;
+use app\models\Person;
+use app\models\Product;
+use app\models\Customer;
 use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\ProductStock;
-use app\models\Product;
-use app\models\Customer;
 use app\services\ConexaService;
 use app\services\ImportService;
 use app\dtos\ErrorResponseDTO;
 use app\dtos\AuthDTO;
+use app\dtos\SaleDTO;
 use app\dtos\ProductDTO;
 use app\dtos\ProductsDTO;
 use app\dtos\PaginationDTO;
@@ -316,10 +318,10 @@ class SiteController extends Controller
         Yii::$app->response->format = Response::FORMAT_JSON;
         
         try {
-            $query = \app\models\Person::find();
-            
+            $query = Person::find();
+
             if ($q) {
-                $query->andWhere("MATCH(name) AGAINST(:q IN BOOLEAN MODE)", [':q' => $q . '*']);
+                $query->andWhere(new Expression('(MATCH(name) AGAINST(:q IN BOOLEAN MODE) OR MATCH(cpf) AGAINST(:q IN BOOLEAN MODE) OR MATCH(rg) AGAINST(:q IN BOOLEAN MODE))'), [':q' => $q . '*']);
             }
 
             if ($customer_id) {
