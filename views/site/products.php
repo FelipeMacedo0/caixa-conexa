@@ -61,9 +61,23 @@ $this->params['breadcrumbs'][] = $this->title;
                     <td class="align-middle"><?= Html::encode($product->name) ?></td>
                     <td class="align-middle" style="<?= $stockStyle ?>"><?= Html::encode($stock) ?></td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#stockModal" data-product-id="<?= Html::encode($product->productId) ?>">
-                            Lançar Estoque
-                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item text-success" href="#" data-bs-toggle="modal" data-bs-target="#stockModal" data-product-id="<?= Html::encode($product->productId) ?>">
+                                        <i class="fas fa-plus-circle"></i> Lançar Estoque
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-primary" href="#" data-bs-toggle="modal" data-bs-target="#historyModal" data-product-id="<?= Html::encode($product->productId) ?>" data-product-name="<?= Html::encode($product->name) ?>">
+                                        <i class="fas fa-history"></i> Ver Histórico
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -117,8 +131,49 @@ $this->params['breadcrumbs'][] = $this->title;
   </div>
 </div>
 
+<!-- Modal para Histórico de Estoque -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="historyModalLabel">Histórico de Movimentações: <span id="history_product_name"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <div id="history_loading" class="text-center d-none">
+              <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+              </div>
+          </div>
+          <div class="table-responsive">
+              <table class="table table-sm table-hover" id="history_table">
+                  <thead>
+                      <tr>
+                          <th>Data</th>
+                          <th>Tipo</th>
+                          <th class="text-end">Qtd</th>
+                          <th>Observação</th>
+                      </tr>
+                  </thead>
+                  <tbody id="history_body">
+                      <!-- Movimentações serão inseridas aqui -->
+                  </tbody>
+              </table>
+          </div>
+          <div id="history_empty" class="alert alert-info d-none">
+              Nenhuma movimentação encontrada para este produto.
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <?php
 $urlImportProducts = \yii\helpers\Url::to(['site/import-products']);
+$urlStockHistory = \yii\helpers\Url::to(['site/stock-history']);
 
 $js = <<<JS
 var btnImport = document.getElementById('btn-import-products');
@@ -164,6 +219,55 @@ if (stockModal) {
         var productId = button.getAttribute('data-product-id')
         var inputProductId = stockModal.querySelector('#modal_product_id')
         inputProductId.value = productId;
+    })
+}
+
+var historyModal = document.getElementById('historyModal')
+if (historyModal) {
+    historyModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget
+        var productId = button.getAttribute('data-product-id')
+        var productName = button.getAttribute('data-product-name')
+        
+        document.getElementById('history_product_name').innerText = productName;
+        var tableBody = document.getElementById('history_body');
+        var loading = document.getElementById('history_loading');
+        var empty = document.getElementById('history_empty');
+        var table = document.getElementById('history_table');
+        
+        tableBody.innerHTML = '';
+        loading.classList.remove('d-none');
+        empty.classList.add('d-none');
+        table.classList.add('d-none');
+        
+        var url = "{$urlStockHistory}";
+        var separator = url.indexOf('?') !== -1 ? '&' : '?';
+        
+        fetch(url + separator + "product_id=" + productId)
+            .then(response => response.json())
+            .then(response => {
+                loading.classList.add('d-none');
+                if (response.success && response.data.length > 0) {
+                    table.classList.remove('d-none');
+                    response.data.forEach(item => {
+                        var badgeClass = item.type === 'Entrada' ? 'bg-success' : 'bg-danger';
+                        var row = `<tr>
+                            <td>\${item.date}</td>
+                            <td><span class="badge \${badgeClass}">\${item.type}</span></td>
+                            <td class="text-end">\${item.qtd}</td>
+                            <td>\${item.observation}</td>
+                        </tr>`;
+                        tableBody.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    empty.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loading.classList.add('d-none');
+                alert('Erro ao carregar histórico: ' + error);
+            });
     })
 }
 JS;

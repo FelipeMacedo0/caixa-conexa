@@ -34,10 +34,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
+                'only' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'stock-history', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
                 'rules' => [
                     [
-                        'actions' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
+                        'actions' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'stock-history', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -223,6 +223,33 @@ class SiteController extends Controller
             'limit' => $limit,
             'offset' => $offset,
         ]);
+    }
+
+    public function actionStockHistory($product_id)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $models = ProductStock::find()
+                ->where(['product_id' => $product_id])
+                ->andWhere(['is', 'deleted_at', new Expression('NULL')])
+                ->orderBy(['created_at' => SORT_DESC])
+                ->limit(50)
+                ->all();
+            
+            $data = array_map(function($m) {
+                return [
+                    'date' => Yii::$app->formatter->asDatetime($m->created_at, 'short'),
+                    'type' => $m->qtd > 0 ? 'Entrada' : 'Saída',
+                    'qtd' => abs($m->qtd),
+                    'observation' => $m->observation ?: '-'
+                ];
+            }, $models);
+            
+            return ['success' => true, 'data' => $data];
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
     }
 
     /**
