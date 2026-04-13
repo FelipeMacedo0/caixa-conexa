@@ -256,7 +256,7 @@ class SiteController extends Controller
         try {
             $query = Product::find();
             if ($q) {
-                $query->andWhere(['like', 'name', $q]);
+                $query->andWhere("MATCH(name, description) AGAINST(:q IN BOOLEAN MODE)", [':q' => $q . '*']);
             }
             $models = $query->limit(100)->all();
             
@@ -283,7 +283,7 @@ class SiteController extends Controller
         try {
             $query = Customer::find();
             if ($q) {
-                $query->andWhere(['or', ['like', 'name', $q], ['like', 'trade_name', $q]]);
+                $query->andWhere("MATCH(name, trade_name) AGAINST(:q IN BOOLEAN MODE)", [':q' => $q . '*']);
             }
             $models = $query->limit(100)->all();
             
@@ -317,12 +317,15 @@ class SiteController extends Controller
         
         try {
             $query = \app\models\Person::find();
+            
             if ($q) {
-                $query->andWhere(['like', 'name', $q]);
+                $query->andWhere("MATCH(name) AGAINST(:q IN BOOLEAN MODE)", [':q' => $q . '*']);
             }
+
             if ($customer_id) {
                 $query->andWhere(['customer_id' => $customer_id]);
             }
+
             $models = $query->limit(100)->all();
             
             $results = array_map(function($p) {
