@@ -257,15 +257,32 @@ class SiteController extends Controller
         
         try {
             $query = Product::find();
+            
             if ($q) {
                 $query->andWhere("MATCH(name, description) AGAINST(:q IN BOOLEAN MODE)", [':q' => $q . '*']);
             }
+
             $models = $query->limit(100)->all();
             
-            $results = array_map(function($p) {
+            $productIds = array_column($models, 'product_id');
+            $stocks = ProductStock::find()
+                ->select(['product_id', 'SUM(qtd) as balance'])
+                ->where(['product_id' => $productIds])
+                ->andWhere(['is', 'deleted_at', new \yii\db\Expression('NULL')])
+                ->groupBy('product_id')
+                ->asArray()
+                ->all();
+            
+            $stockMap = [];
+            foreach ($stocks as $s) {
+                $stockMap[$s['product_id']] = $s['balance'];
+            }
+
+            $results = array_map(function($p) use ($stockMap) {
+                $balance = $stockMap[$p->product_id] ?? 0;
                 return [
                     'id' => $p->product_id, 
-                    'text' => $p->name
+                    'text' => $p->name . ' (Estoque: ' . (int)$balance . ')'
                 ];
             }, $models);
             
