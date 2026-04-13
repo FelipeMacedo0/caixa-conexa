@@ -100,6 +100,12 @@ $this->params['breadcrumbs'][] = $this->title;
               </select>
           </div>
           <div class="mb-3">
+              <label for="modal_requester_id" class="form-label">Pessoa (Solicitante)</label>
+              <select name="requester_id" id="modal_requester_id" class="form-select" style="width: 100%;">
+                 <!-- select2 ajax options will be loaded here -->
+              </select>
+          </div>
+          <div class="mb-3">
               <label for="modal_qtd" class="form-label">Quantidade</label>
               <?= Html::input('number', 'qtd', '', ['class' => 'form-control', 'id' => 'modal_qtd', 'required' => true, 'min' => 1]) ?>
           </div>
@@ -123,6 +129,7 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/s
 
 $urlSearchProducts = \yii\helpers\Url::to(['site/search-products']);
 $urlSearchCustomers = \yii\helpers\Url::to(['site/search-customers']);
+$urlSearchPersons = \yii\helpers\Url::to(['site/search-persons']);
 $urlImportCustomers = \yii\helpers\Url::to(['site/import-customers']);
 $urlImportPersons = \yii\helpers\Url::to(['site/import-persons']);
 
@@ -237,6 +244,33 @@ $(document).ready(function() {
             cache: true
         },
         placeholder: 'Selecione um cliente...',
+        allowClear: true
+    }).on('change', function() {
+        // Reset requester when customer changes
+        $('#modal_requester_id').val(null).trigger('change');
+    });
+
+    $('#modal_requester_id').select2({
+        dropdownParent: $('#saleModal'),
+        theme: 'default',
+        ajax: {
+            url: '{$urlSearchPersons}',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term,
+                    customer_id: $('#modal_customer_id').val()
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.results
+                };
+            },
+            cache: true
+        },
+        placeholder: 'Selecione uma pessoa (solicitante)...',
         allowClear: true
     });
 });

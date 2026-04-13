@@ -32,10 +32,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
+                'only' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
                 'rules' => [
                     [
-                        'actions' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
+                        'actions' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -309,6 +309,36 @@ class SiteController extends Controller
     }
 
     /**
+     * Action to search persons for Select2 Ajax
+     */
+    public function actionSearchPersons($q = null, $customer_id = null)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $query = \app\models\Person::find();
+            if ($q) {
+                $query->andWhere(['like', 'name', $q]);
+            }
+            if ($customer_id) {
+                $query->andWhere(['customer_id' => $customer_id]);
+            }
+            $models = $query->limit(100)->all();
+            
+            $results = array_map(function($p) {
+                return [
+                    'id' => $p->person_id, 
+                    'text' => $p->name
+                ];
+            }, $models);
+            
+            return ['results' => $results];
+        } catch (\Exception $e) {
+            return ['results' => []];
+        }
+    }
+
+    /**
      * Action to store a sale and decrement stock
      */
     public function actionStoreSale()
@@ -318,10 +348,14 @@ class SiteController extends Controller
             return $this->redirect(Yii::$app->request->referrer ?: ['site/sales']);  
         }
 
-        $productId = $request->post('product_id');
-        $customerId = $request->post('customer_id');
+        $productId = (int) $request->post('product_id');
+        $customerId = (int) $request->post('customer_id');
+        $requesterId = (int) $request->post('requester_id');
         $qtd = (int) $request->post('qtd');
         $observation = $request->post('observation');
+
+        //var_dump($productId, $customerId, $requesterId, $qtd, $observation);
+        //die;
 
         $stockBalance = ProductStock::getStockBalance($productId);
 
@@ -336,9 +370,12 @@ class SiteController extends Controller
             $saleDto = new SaleDTO([
                 'productId' => $productId,
                 'customerId' => $customerId,
+                'requesterId' => $requesterId,
                 'quantity' => $qtd,
                 'notes' => $observation ?: 'Venda lançada via Painel'
             ]);
+
+            
             
             // Dispara requisição para a API Conexa
             $postResponse = $conexaService->storeSale($saleDto);

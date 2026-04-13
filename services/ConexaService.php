@@ -247,11 +247,13 @@ class ConexaService {
             $uri = "/sale";
 
             $response = Yii::$app->http->post($this->urlApi . $uri, [
-                    "productId" => $sale->productId,
-                    "quantity" => $sale->quantity,
-                    "customerId" => $sale->customerId,
-                    "notes" => $sale->notes
-                ],[
+                "customerId" => $sale->customerId,
+                "requesterId" => $sale->requesterId,
+                "productId" => $sale->productId,
+                "quantity" => $sale->quantity,
+                "notes" => $sale->notes
+                ],
+                [
                 "Authorization" => "Bearer " . $token,
             ]);
 
