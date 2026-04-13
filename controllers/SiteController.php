@@ -32,10 +32,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products', 'import-customers'],
+                'only' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
                 'rules' => [
                     [
-                        'actions' => ['logout', 'products', 'sales', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products', 'import-customers'],
+                        'actions' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'search-products', 'search-customers', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -176,6 +176,48 @@ class SiteController extends Controller
 
         return $this->render('sales', [
             'sales' => $salesObj,
+            'limit' => $limit,
+            'offset' => $offset,
+        ]);
+    }
+
+    /**
+     * Displays persons page.
+     *
+     * @return string
+     */
+    public function actionPersons()
+    {
+        $limit = (int)Yii::$app->request->get('limit', 10);
+        $offset = (int)Yii::$app->request->get('offset', 0);
+
+        $query = \app\models\Person::find();
+        $totalCount = $query->count();
+        $models = $query->offset($offset)->limit($limit)->all();
+        
+        $data = [];
+        foreach ($models as $model) {
+            $data[] = new \app\dtos\PersonDTO([
+                'personId' => $model->person_id,
+                'name' => $model->name,
+                'cpf' => $model->cpf,
+                'cellNumber' => $model->cell_number,
+                'isActive' => (bool)$model->is_active,
+            ]);
+        }
+        
+        $hasNext = ($offset + $limit) < $totalCount;
+        $pagination = new PaginationDTO([
+            'limit' => $limit,
+            'offset' => $offset,
+            'hasNext' => $hasNext
+        ]);
+        
+        $personsDTO = new \app\dtos\PersonsDTO($data, $pagination);
+        $personsObj = $personsDTO->toObject();
+
+        return $this->render('persons', [
+            'persons' => $personsObj,
             'limit' => $limit,
             'offset' => $offset,
         ]);
@@ -389,6 +431,40 @@ class SiteController extends Controller
             }
         } catch (\Exception $e) {
             Yii::error("ActionImportCustomers Exception: " . $e->getMessage());
+            if (!function_exists('fastcgi_finish_request')) {
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
+        }
+    }
+
+    /**
+     * Action to import persons from Conexa API asynchronously (triggered via AJAX)
+     */
+    public function actionImportPersons()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        if (function_exists('fastcgi_finish_request')) {
+            echo json_encode(['success' => true, 'message' => 'Importação de pessoas iniciada em segundo plano.']);
+            fastcgi_finish_request();
+        }
+
+        try {
+            $importService = new ImportService();
+            $result = $importService->importPersons();
+            
+            if (!$result['success']) {
+                Yii::error("Import persons error: " . $result['error']);
+                if (!function_exists('fastcgi_finish_request')) {
+                    return ['success' => false, 'message' => $result['error']];
+                }
+            }
+
+            if (!function_exists('fastcgi_finish_request')) {
+                return ['success' => true, 'data' => $result];
+            }
+        } catch (\Exception $e) {
+            Yii::error("ActionImportPersons Exception: " . $e->getMessage());
             if (!function_exists('fastcgi_finish_request')) {
                 return ['success' => false, 'message' => $e->getMessage()];
             }

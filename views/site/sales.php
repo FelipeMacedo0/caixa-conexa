@@ -22,6 +22,10 @@ $this->params['breadcrumbs'][] = $this->title;
         <?= Html::endForm() ?>
         </div>
         <div>
+            <?= Html::button('<i class="fas fa-user-friends"></i> Sincronizar Pessoas', [
+                'id' => 'btn-import-persons',
+                'class' => 'btn btn-outline-primary me-2',
+            ]) ?>
             <?= Html::button('<i class="fas fa-sync"></i> Sincronizar Clientes', [
                 'id' => 'btn-import-customers',
                 'class' => 'btn btn-primary me-2',
@@ -120,11 +124,12 @@ $this->registerJsFile('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/s
 $urlSearchProducts = \yii\helpers\Url::to(['site/search-products']);
 $urlSearchCustomers = \yii\helpers\Url::to(['site/search-customers']);
 $urlImportCustomers = \yii\helpers\Url::to(['site/import-customers']);
+$urlImportPersons = \yii\helpers\Url::to(['site/import-persons']);
 
 $js = <<<JS
-var btnImport = document.getElementById('btn-import-customers');
-if (btnImport) {
-    btnImport.addEventListener('click', function() {
+var btnImportCustomers = document.getElementById('btn-import-customers');
+if (btnImportCustomers) {
+    btnImportCustomers.addEventListener('click', function() {
         if (!confirm('Deseja iniciar a sincronização de clientes com a API Conexa?')) {
             return;
         }
@@ -150,6 +155,39 @@ if (btnImport) {
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-sync"></i> Sincronizar Clientes';
+                }, 3000);
+            });
+    });
+}
+
+var btnImportPersons = document.getElementById('btn-import-persons');
+if (btnImportPersons) {
+    btnImportPersons.addEventListener('click', function() {
+        if (!confirm('Deseja iniciar a sincronização de pessoas com a API Conexa?')) {
+            return;
+        }
+
+        var btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sincronizando...';
+
+        fetch("{$urlImportPersons}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('A sincronização de pessoas foi iniciada com sucesso e está rodando em segundo plano.');
+                } else {
+                    alert('Erro ao iniciar sincronização: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('A requisição foi enviada. Verifique o status posteriormente.');
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-user-friends"></i> Sincronizar Pessoas';
                 }, 3000);
             });
     });

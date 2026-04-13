@@ -6,8 +6,10 @@ use Yii;
 use app\services\ConexaService;
 use app\models\Product;
 use app\models\Customer;
+use app\models\Person;
 use app\dtos\ProductDTO;
 use app\dtos\CustomerDTO;
+use app\dtos\PersonDTO;
 use app\dtos\ErrorResponseDTO;
 use Exception;
 
@@ -131,6 +133,61 @@ class ImportService
     }
 
     /**
+     * Imports all persons from Conexa API until hasNext is false
+     * 
+     * @return array Summary of import
+     */
+    public function importPersons()
+    {
+        $limit = 100;
+        $offset = 0;
+        $totalImported = 0;
+        $pages = 0;
+
+        try {
+            do {
+                $personsDto = $this->conexaService->persons($limit, $offset);
+
+                if ($personsDto instanceof ErrorResponseDTO) {
+                    throw new Exception("Error during persons fetch at offset $offset: " . json_encode($personsDto->toArray()));
+                }
+
+                $data = $personsDto->getData();
+                foreach ($data as $personDto) {
+                    $this->savePerson($personDto);
+                    $totalImported++;
+                }
+
+                $pagination = $personsDto->getPagination();
+                $hasNext = $pagination ? $pagination->getHasNext() : false;
+                $offset += $limit;
+                $pages++;
+
+                // Safety break
+                if ($pages > 1000) {
+                    break;
+                }
+
+            } while ($hasNext);
+
+            return [
+                'success' => true,
+                'total' => $totalImported,
+                'pages' => $pages
+            ];
+
+        } catch (Exception $e) {
+            Yii::error("ImportPersons Error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'total' => $totalImported,
+                'pages' => $pages
+            ];
+        }
+    }
+
+    /**
      * Maps ProductDTO to Product model and saves it
      */
     private function saveProduct(ProductDTO $dto)
@@ -181,6 +238,44 @@ class ImportService
         if (!$model->save()) {
             $errors = json_encode($model->getErrors());
             throw new Exception("Failed to save customer {$dto->customerId}: $errors");
+        }
+    }
+
+    /**
+     * Maps PersonDTO to Person model and saves it
+     */
+    private function savePerson(PersonDTO $dto)
+    {
+        $model = Person::findOne(['person_id' => $dto->personId]) ?: new Person();
+
+        $model->person_id = $dto->personId;
+        $model->customer_id = $dto->customerId;
+        $model->company_id = $dto->companyId;
+        $model->is_foreign = $dto->isForeign ? 1 : 0;
+        $model->name = $dto->name;
+        $model->rg = $dto->rg;
+        $model->issuing_authority = $dto->issuingAuthority;
+        $model->cpf = $dto->cpf;
+        $model->birth_date = $dto->birthDate ? $dto->birthDate->format('Y-m-d') : null;
+        $model->marital_status = $dto->maritalStatus;
+        $model->sex = $dto->sex;
+        $model->nationality = $dto->nationality;
+        $model->place_of_birth = $dto->placeOfBirth;
+        $model->notes = $dto->notes;
+        $model->is_company_partner = $dto->isCompanyPartner ? 1 : 0;
+        $model->is_guarantor = $dto->isGuarantor ? 1 : 0;
+        $model->profession = $dto->profession;
+        $model->cell_number = $dto->cellNumber;
+        $model->job_title = $dto->jobTitle;
+        $model->photo = $dto->photo;
+        $model->resume = $dto->resume;
+        $model->is_individual_customer = $dto->isIndividualCustomer ? 1 : 0;
+        $model->has_login_access = $dto->hasLoginAccess ? 1 : 0;
+        $model->is_active = $dto->isActive ? 1 : 0;
+    
+        if (!$model->save()) {
+            $errors = json_encode($model->getErrors());
+            throw new Exception("Failed to save person {$dto->personId}: $errors");
         }
     }
 }

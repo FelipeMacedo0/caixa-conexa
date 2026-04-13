@@ -8,6 +8,7 @@ use app\dtos\SaleDTO;
 use app\dtos\SalesDTO;
 use app\dtos\ProductsDTO;
 use app\dtos\CustomersDTO;
+use app\dtos\PersonsDTO;
 use app\dtos\PaginationDTO;
 use app\dtos\PostResponseDTO;
 use app\dtos\ErrorResponseDTO;
@@ -142,6 +143,54 @@ class ConexaService {
 
         }catch(Exception $e){
             throw new Exception("Error trying to get customers", 1, $e);
+        }
+    }
+
+    public function persons(int $limit=10, int $offset=0, ?string $name = null){
+        $token = Yii::$app->user->identity->access_token;
+
+        if(empty($token)){
+            throw new Exception("Usuário não autorizado!");
+        }
+
+        try{
+            $uri = "/persons";
+
+            $params = [
+                'limit' => $limit,
+                'offset' => $offset
+            ];
+
+            if ($name !== null && trim($name) !== '') {
+                $params['name'] = $name;
+            }
+
+            $query = http_build_query($params);
+
+            $endpoint = $uri . '?' . $query;
+
+            $response = Yii::$app->http->get($this->urlApi . $endpoint, [
+                "Authorization" => "Bearer " . $token,
+            ]);
+
+            if (!in_array($response['statusCode'], [200, 201])) {
+                $errorDto = ErrorResponseDTO::fromArray($response['data'], $response['statusCode']);
+                $errorDto->flash();
+                return $errorDto;
+            }
+
+            $data = $response['data'];
+
+            if(empty($data['pagination'])){
+                throw new Exception('Pagination is empty');
+            }
+
+            $pagination = PaginationDTO::fromArray($data['pagination']);
+
+            return new PersonsDTO($data['data'], $pagination);
+
+        } catch (Exception $e) {
+            throw new Exception("Error trying to get persons", 1, $e);
         }
     }
 
