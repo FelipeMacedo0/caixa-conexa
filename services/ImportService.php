@@ -7,9 +7,11 @@ use app\services\ConexaService;
 use app\models\Product;
 use app\models\Customer;
 use app\models\Person;
+use app\models\Sale;
 use app\dtos\ProductDTO;
 use app\dtos\CustomerDTO;
 use app\dtos\PersonDTO;
+use app\dtos\SaleDTO;
 use app\dtos\ErrorResponseDTO;
 use Exception;
 
@@ -276,6 +278,92 @@ class ImportService
         if (!$model->save()) {
             $errors = json_encode($model->getErrors());
             throw new Exception("Failed to save person {$dto->personId}: $errors");
+        }
+    }
+
+    /**
+     * Imports all sales from Conexa API until hasNext is false
+     * 
+     * @return array Summary of import
+     */
+    public function importSales()
+    {
+        $limit = 100;
+        $offset = 0;
+        $totalImported = 0;
+        $pages = 0;
+
+        try {
+            do {
+                $salesDto = $this->conexaService->sales($limit, $offset);
+
+                if ($salesDto instanceof ErrorResponseDTO) {
+                    throw new Exception("Error during sales fetch at offset $offset: " . json_encode($salesDto->toArray()));
+                }
+
+                $data = $salesDto->getData();
+                foreach ($data as $saleDto) {
+                    $this->saveSale($saleDto);
+                    $totalImported++;
+                }
+
+                $pagination = $salesDto->getPagination();
+                $hasNext = $pagination ? $pagination->getHasNext() : false;
+                $offset += $limit;
+                $pages++;
+
+                // Safety break
+                if ($pages > 1000) {
+                    break;
+                }
+
+            } while ($hasNext);
+
+            return [
+                'success' => true,
+                'total' => $totalImported,
+                'pages' => $pages
+            ];
+
+        } catch (Exception $e) {
+            Yii::error("ImportSales Error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'total' => $totalImported,
+                'pages' => $pages
+            ];
+        }
+    }
+
+    /**
+     * Maps SaleDTO to Sale model and saves it
+     */
+    private function saveSale(SaleDTO $dto)
+    {
+        $model = Sale::findOne(['sale_id' => $dto->saleId]) ?: new Sale();
+
+        $model->sale_id = $dto->saleId;
+        $model->status = $dto->status;
+        $model->discount_value = $dto->discountValue;
+        $model->amount = $dto->amount;
+        $model->quantity = $dto->quantity;
+        $model->notes = $dto->notes;
+        $model->product_id = $dto->productId;
+        $model->customer_id = $dto->customerId;
+        $model->requester_id = $dto->requesterId;
+        $model->seller_id = $dto->sellerId;
+        $model->contract_id = $dto->contractId;
+        $model->recurring_sale_id = $dto->recurringSaleId;
+        $model->original_amount = $dto->originalAmount;
+        
+        $model->reference_date = $dto->referenceDate ? $dto->referenceDate->format('Y-m-d H:i:s') : null;
+        $model->created_at = $dto->createdAt ? $dto->createdAt->format('Y-m-d H:i:s') : null;
+        $model->updated_at = $dto->updatedAt ? $dto->updatedAt->format('Y-m-d H:i:s') : null;
+
+        if (!$model->save()) {
+            $errors = json_encode($model->getErrors());
+            throw new Exception("Failed to save sale {$dto->saleId}: $errors");
         }
     }
 }

@@ -34,10 +34,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'stock-history', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
+                'only' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'stock-history', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons', 'import-sales'],
                 'rules' => [
                     [
-                        'actions' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'stock-history', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons'],
+                        'actions' => ['logout', 'products', 'sales', 'persons', 'add-stock', 'stock-history', 'search-products', 'search-customers', 'search-persons', 'store-sale', 'import-products', 'import-customers', 'import-persons', 'import-sales'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -169,12 +169,45 @@ class SiteController extends Controller
         $limit = (int)Yii::$app->request->get('limit', 10);
         $offset = (int)Yii::$app->request->get('offset', 0);
 
-        $conexaService = new ConexaService();
-        $sales = $conexaService->sales($limit, $offset);
-
-        $salesObj = ($sales instanceof ErrorResponseDTO) 
-            ? (object)['data' => [], 'pagination' => null] 
-            : $sales->toObject();
+        $query = \app\models\Sale::find()->orderBy(['created_at' => SORT_DESC]);
+        $totalCount = $query->count();
+        $models = $query->offset($offset)->limit($limit)->all();
+        
+        $data = [];
+        foreach ($models as $model) {
+            $data[] = new SaleDTO([
+                'saleId' => $model->sale_id,
+                'status' => $model->status,
+                'discountValue' => $model->discount_value,
+                'amount' => $model->amount,
+                'quantity' => $model->quantity,
+                'notes' => $model->notes,
+                'productId' => $model->product_id,
+                'customerId' => $model->customer_id,
+                'requesterId' => $model->requester_id,
+                'sellerId' => $model->seller_id,
+                'contractId' => $model->contract_id,
+                'recurringSaleId' => $model->recurring_sale_id,
+                'originalAmount' => $model->original_amount,
+                'referenceDate' => $model->reference_date,
+                'createdAt' => $model->created_at,
+                'updatedAt' => $model->updated_at,
+                // Passing product as array for ProductDTO::fromArray
+                'product' => $model->product ? [
+                    'name' => $model->product->name
+                ] : null
+            ]);
+        }
+        
+        $hasNext = ($offset + $limit) < $totalCount;
+        $pagination = new PaginationDTO([
+            'limit' => $limit,
+            'offset' => $offset,
+            'hasNext' => $hasNext
+        ]);
+        
+        $salesDtoObj = new \app\dtos\SalesDTO($data, $pagination);
+        $salesObj = $salesDtoObj->toObject();
 
         return $this->render('sales', [
             'sales' => $salesObj,
@@ -555,6 +588,40 @@ class SiteController extends Controller
             }
         } catch (\Exception $e) {
             Yii::error("ActionImportPersons Exception: " . $e->getMessage());
+            if (!function_exists('fastcgi_finish_request')) {
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
+        }
+    }
+
+    /**
+     * Action to import sales from Conexa API asynchronously (triggered via AJAX)
+     */
+    public function actionImportSales()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        if (function_exists('fastcgi_finish_request')) {
+            echo json_encode(['success' => true, 'message' => 'Importação de vendas iniciada em segundo plano.']);
+            fastcgi_finish_request();
+        }
+
+        try {
+            $importService = new ImportService();
+            $result = $importService->importSales();
+            
+            if (!$result['success']) {
+                Yii::error("Import sales error: " . $result['error']);
+                if (!function_exists('fastcgi_finish_request')) {
+                    return ['success' => false, 'message' => $result['error']];
+                }
+            }
+
+            if (!function_exists('fastcgi_finish_request')) {
+                return ['success' => true, 'data' => $result];
+            }
+        } catch (\Exception $e) {
+            Yii::error("ActionImportSales Exception: " . $e->getMessage());
             if (!function_exists('fastcgi_finish_request')) {
                 return ['success' => false, 'message' => $e->getMessage()];
             }

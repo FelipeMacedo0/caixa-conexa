@@ -30,6 +30,10 @@ $this->params['breadcrumbs'][] = $this->title;
                 'id' => 'btn-import-customers',
                 'class' => 'btn btn-primary me-2',
             ]) ?>
+            <?= Html::button('<i class="fas fa-shopping-cart"></i> Sincronizar Vendas', [
+                'id' => 'btn-import-sales',
+                'class' => 'btn btn-outline-success me-2',
+            ]) ?>
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#saleModal">
                 Lançar Venda
             </button>
@@ -132,6 +136,7 @@ $urlSearchCustomers = \yii\helpers\Url::to(['site/search-customers']);
 $urlSearchPersons = \yii\helpers\Url::to(['site/search-persons']);
 $urlImportCustomers = \yii\helpers\Url::to(['site/import-customers']);
 $urlImportPersons = \yii\helpers\Url::to(['site/import-persons']);
+$urlImportSales = \yii\helpers\Url::to(['site/import-sales']);
 
 $js = <<<JS
 var btnImportCustomers = document.getElementById('btn-import-customers');
@@ -195,6 +200,39 @@ if (btnImportPersons) {
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-user-friends"></i> Sincronizar Pessoas';
+                }, 3000);
+            });
+    });
+}
+
+var btnImportSales = document.getElementById('btn-import-sales');
+if (btnImportSales) {
+    btnImportSales.addEventListener('click', function() {
+        if (!confirm('Deseja iniciar a sincronização de vendas com a API Conexa?')) {
+            return;
+        }
+
+        var btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sincronizando...';
+
+        fetch("{$urlImportSales}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('A sincronização de vendas foi iniciada com sucesso e está rodando em segundo plano.');
+                } else {
+                    alert('Erro ao iniciar sincronização: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('A requisição foi enviada. Verifique o status posteriormente.');
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Sincronizar Vendas';
                 }, 3000);
             });
     });
