@@ -15,18 +15,18 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="mb-3 d-flex justify-content-between align-items-center">
         <div>
             <?= Html::beginForm(['site/products'], 'get', ['class' => 'd-inline-flex align-items-center']) ?>
-                <label for="limit" class="me-2">Exibir:</label>
+                <label for="limit" class="me-2">Display:</label>
                 <?= Html::dropDownList('limit', $limit, [5 => 5, 10 => 10, 20 => 20, 50 => 50], [
                     'id' => 'limit', 
                     'onchange' => 'this.form.submit()', 
                     'class' => 'form-select form-select-sm w-auto me-2'
                 ]) ?>
-                <span>itens</span>
+                <span>items</span>
                 <?= Html::hiddenInput('offset', 0) ?>
             <?= Html::endForm() ?>
         </div>
         <div>
-            <?= Html::button('<i class="fas fa-sync"></i> Sincronizar Produtos', [
+            <?= Html::button('<i class="fas fa-sync"></i> Sync Products', [
                 'id' => 'btn-import-products',
                 'class' => 'btn btn-primary',
             ]) ?>
@@ -38,8 +38,8 @@ $this->params['breadcrumbs'][] = $this->title;
             <tr>
                 <th>ID</th>
                 <th>Name</th>
-                <th>Estoque</th>
-                <th class="text-center" style="width: 150px;">Ações</th>
+                <th>Inventory</th>
+                <th class="text-center" style="width: 150px;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -51,7 +51,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 } elseif ($stock < 10) {
                     $stockStyle = 'color: orange; font-weight: bold;';
                 } elseif ($stock < 50) {
-                    $stockStyle = 'color: #d39e00; font-weight: bold;'; // Amarelo escuro para melhor leitura
+                    $stockStyle = 'color: #d39e00; font-weight: bold;'; // Dark yellow for readability
                 } else {
                     $stockStyle = 'color: green; font-weight: bold;';
                 }
@@ -68,12 +68,12 @@ $this->params['breadcrumbs'][] = $this->title;
                             <ul class="dropdown-menu">
                                 <li>
                                     <a class="dropdown-item text-success" href="#" data-bs-toggle="modal" data-bs-target="#stockModal" data-product-id="<?= Html::encode($product->productId) ?>" data-product-name="<?= Html::encode($product->name) ?>">
-                                        <i class="fas fa-plus-circle"></i> Lançar Estoque
+                                        <i class="fas fa-plus-circle"></i> Add Inventory
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item text-primary" href="#" data-bs-toggle="modal" data-bs-target="#historyModal" data-product-id="<?= Html::encode($product->productId) ?>" data-product-name="<?= Html::encode($product->name) ?>">
-                                        <i class="fas fa-history"></i> Ver Histórico
+                                        <i class="fas fa-history"></i> View History
                                     </a>
                                 </li>
                             </ul>
@@ -86,14 +86,14 @@ $this->params['breadcrumbs'][] = $this->title;
             <tr>
                 <td colspan="4" class="text-center">
                     <?php if ($offset > 0): ?>
-                        <?= Html::a('Anterior', ['site/products', 'limit' => $limit, 'offset' => max(0, $offset - $limit)], ['class' => 'btn btn-outline-primary btn-sm']) ?>
+                        <?= Html::a('Previous', ['site/products', 'limit' => $limit, 'offset' => max(0, $offset - $limit)], ['class' => 'btn btn-outline-primary btn-sm']) ?>
                     <?php endif; ?>
                     
                     <?php if (isset($products->pagination)): ?>
                         <?php if ($products->pagination->hasNext): ?>
-                            <?= Html::a('Próxima', ['site/products', 'limit' => $limit, 'offset' => $offset + $limit], ['class' => 'btn btn-outline-primary btn-sm']) ?>
+                            <?= Html::a('Next', ['site/products', 'limit' => $limit, 'offset' => $offset + $limit], ['class' => 'btn btn-outline-primary btn-sm']) ?>
                         <?php elseif ($offset > 0): ?>
-                            <?= Html::a('Primeira página', ['site/products', 'limit' => $limit, 'offset' => 0], ['class' => 'btn btn-outline-secondary btn-sm']) ?>
+                            <?= Html::a('First page', ['site/products', 'limit' => $limit, 'offset' => 0], ['class' => 'btn btn-outline-secondary btn-sm']) ?>
                         <?php endif; ?>
                     <?php endif; ?>
                 </td>
@@ -102,41 +102,41 @@ $this->params['breadcrumbs'][] = $this->title;
     </table>
 </div>
 
-<!-- Modal para lançar estoque -->
+<!-- Add inventory modal -->
 <div class="modal fade" id="stockModal" tabindex="-1" aria-labelledby="stockModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="stockModalLabel">Lançar Estoque: <span id="stock_product_name"></span> (ID: <span id="stock_product_id_display"></span>)</h5>
+        <h5 class="modal-title" id="stockModalLabel">Add Inventory: <span id="stock_product_name"></span> (ID: <span id="stock_product_id_display"></span>)</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <?= Html::beginForm(['site/add-stock'], 'post') ?>
       <div class="modal-body">
           <?= Html::hiddenInput('product_id', '', ['id' => 'modal_product_id']) ?>
           <div class="mb-3">
-              <label for="modal_qtd" class="form-label">Quantidade</label>
+              <label for="modal_qtd" class="form-label">Quantity</label>
               <?= Html::input('number', 'qtd', '', ['class' => 'form-control', 'id' => 'modal_qtd', 'required' => true]) ?>
           </div>
           <div class="mb-3">
-              <label for="modal_observation" class="form-label">Observação (Opcional)</label>
+              <label for="modal_observation" class="form-label">Note (Optional)</label>
               <?= Html::textarea('observation', '', ['class' => 'form-control', 'id' => 'modal_observation', 'rows' => 3]) ?>
           </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Save</button>
       </div>
       <?= Html::endForm() ?>
     </div>
   </div>
 </div>
 
-<!-- Modal para Histórico de Estoque -->
+<!-- Inventory History Modal -->
 <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="historyModalLabel">Histórico de Movimentações: <span id="history_product_name"></span></h5>
+        <h5 class="modal-title" id="historyModalLabel">Movement History: <span id="history_product_name"></span></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -149,23 +149,23 @@ $this->params['breadcrumbs'][] = $this->title;
               <table class="table table-sm table-hover" id="history_table">
                   <thead>
                       <tr>
-                          <th>Data</th>
-                          <th>Tipo</th>
-                          <th class="text-end">Qtd</th>
-                          <th>Observação</th>
+                          <th>Date</th>
+                          <th>Type</th>
+                          <th class="text-end">Qty</th>
+                          <th>Note</th>
                       </tr>
                   </thead>
                   <tbody id="history_body">
-                      <!-- Movimentações serão inseridas aqui -->
+                      <!-- Movements will be inserted here -->
                   </tbody>
               </table>
           </div>
           <div id="history_empty" class="alert alert-info d-none">
-              Nenhuma movimentação encontrada para este produto.
+              No movements found for this product.
           </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -179,34 +179,31 @@ $js = <<<JS
 var btnImport = document.getElementById('btn-import-products');
 if (btnImport) {
     btnImport.addEventListener('click', function() {
-        if (!confirm('Deseja iniciar a sincronização de produtos com a API Conexa?')) {
+        if (!confirm('Do you want to start syncing products with the Conexa API?')) {
             return;
         }
 
         var btn = this;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sincronizando...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Syncing...';
 
-        // Disparamos o AJAX e não esperamos o processamento terminar para liberar o usuário (ou mostramos que iniciou)
         fetch("{$urlImportProducts}")
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('A sincronização foi iniciada com sucesso e está rodando em segundo plano.');
+                    alert('Sync started successfully and is running in the background.');
                 } else {
-                    alert('Erro ao iniciar sincronização: ' + data.message);
+                    alert('Error starting sync: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                // Mesmo com erro de timeout ou algo assim, avisamos que pode estar rodando
-                alert('A requisição foi enviada. Verifique o status posteriormente.');
+                alert('Request sent. Check status later.');
             })
             .finally(() => {
-                // Reabilitamos o botão após um tempo ou após o retorno inicial
                 setTimeout(() => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sync"></i> Sincronizar Produtos';
+                    btn.innerHTML = '<i class="fas fa-sync"></i> Sync Products';
                 }, 3000);
             });
     });
@@ -254,7 +251,7 @@ if (historyModal) {
                 if (response.success && response.data.length > 0) {
                     table.classList.remove('d-none');
                     response.data.forEach(item => {
-                        var badgeClass = item.type === 'Entrada' ? 'bg-success' : 'bg-danger';
+                        var badgeClass = (item.type === 'Addition' || item.type === 'Entrada') ? 'bg-success' : 'bg-danger';
                         var row = `<tr>
                             <td>\${item.date}</td>
                             <td><span class="badge \${badgeClass}">\${item.type}</span></td>
@@ -270,7 +267,7 @@ if (historyModal) {
             .catch(error => {
                 console.error('Error:', error);
                 loading.classList.add('d-none');
-                alert('Erro ao carregar histórico: ' + error);
+                alert('Error loading history: ' + error);
             });
     })
 }

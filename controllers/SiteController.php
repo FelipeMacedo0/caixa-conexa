@@ -273,7 +273,7 @@ class SiteController extends Controller
             $data = array_map(function($m) {
                 return [
                     'date' => Yii::$app->formatter->asDatetime($m->created_at, 'short'),
-                    'type' => $m->qtd > 0 ? 'Entrada' : 'Saída',
+                    'type' => $m->qtd > 0 ? 'Addition' : 'Deduction',
                     'qtd' => abs($m->qtd),
                     'observation' => $m->observation ?: '-'
                 ];
