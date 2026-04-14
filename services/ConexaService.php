@@ -248,7 +248,7 @@ class ConexaService {
 
             $response = Yii::$app->http->post($this->urlApi . $uri, [
                 "customerId" => $sale->customerId,
-                "requesterId" => $sale->requesterId,
+                "requesterId" => $sale->requesterId ?: null,
                 "productId" => $sale->productId,
                 "quantity" => $sale->quantity,
                 "notes" => $sale->notes
