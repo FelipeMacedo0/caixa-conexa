@@ -58,6 +58,8 @@ class LoginForm extends Model
             $user->type = $authDTO->user->type;
             $user->name = $authDTO->user->name;
             $user->access_token = $authDTO->accessToken;
+            // Calculate and save the expiration timestamp
+            $user->expires_at = date('Y-m-d H:i:s', time() + $authDTO->expiresIn);
             $user->save();
 
             return Yii::$app->user->login($user,  $authDTO->expiresIn);

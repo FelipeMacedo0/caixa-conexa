@@ -14,7 +14,11 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findIdentity($id)
     {
-        return self::findOne($id);
+        $user = self::findOne($id);
+        if ($user && $user->expires_at && strtotime($user->expires_at) < time()) {
+            return null;
+        }
+        return $user;
     }
 
     /**
@@ -22,10 +26,11 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findIdentityByAccessToken($token, $type = null)
     {
-
-        return self::findOne([
-            'access_token' => $token
-        ]);
+        $user = self::findOne(['access_token' => $token]);
+        if ($user && $user->expires_at && strtotime($user->expires_at) < time()) {
+            return null;
+        }
+        return $user;
     }
 
     /**
