@@ -67,7 +67,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             </button>
                             <ul class="dropdown-menu">
                                 <li>
-                                    <a class="dropdown-item text-success" href="#" data-bs-toggle="modal" data-bs-target="#stockModal" data-product-id="<?= Html::encode($product->productId) ?>">
+                                    <a class="dropdown-item text-success" href="#" data-bs-toggle="modal" data-bs-target="#stockModal" data-product-id="<?= Html::encode($product->productId) ?>" data-product-name="<?= Html::encode($product->name) ?>">
                                         <i class="fas fa-plus-circle"></i> Lançar Estoque
                                     </a>
                                 </li>
@@ -107,7 +107,7 @@ $this->params['breadcrumbs'][] = $this->title;
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="stockModalLabel">Lançar Estoque</h5>
+        <h5 class="modal-title" id="stockModalLabel">Lançar Estoque: <span id="stock_product_name"></span> (ID: <span id="stock_product_id_display"></span>)</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <?= Html::beginForm(['site/add-stock'], 'post') ?>
@@ -217,8 +217,12 @@ if (stockModal) {
     stockModal.addEventListener('show.bs.modal', function (event) {
         var button = event.relatedTarget
         var productId = button.getAttribute('data-product-id')
+        var productName = button.getAttribute('data-product-name')
+        
         var inputProductId = stockModal.querySelector('#modal_product_id')
         inputProductId.value = productId;
+        stockModal.querySelector('#stock_product_name').innerText = productName;
+        stockModal.querySelector('#stock_product_id_display').innerText = productId;
     })
 }
 
