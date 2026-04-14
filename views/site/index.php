@@ -9,7 +9,7 @@ $this->title = 'Gestão de Estoque Inteligente';
 
     <!-- Hero Section -->
     <div class="p-5 mb-5 rounded shadow-sm text-center" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white;">
-        <h1 class="display-4 fw-bold mb-3">Bem-vindo ao Controle de Estoque</h1>
+        <h1 class="display-4 fw-bold mb-3">Bem-vindo ao Stock Wise</h1>
         <p class="lead fs-4">Gerencie as entradas e saídas do seu negócio de forma rápida, centralizada e absolutamente precisa.</p>
         <hr class="my-4 border-light opacity-25">
         <div class="mt-4">
